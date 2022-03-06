@@ -1,6 +1,7 @@
 open Functoria
 open Mirage_impl_misc
 open Mirage_impl_kv
+open Mirage_impl_pclock
 module Key = Mirage_key
 
 type block = BLOCK
@@ -257,3 +258,16 @@ let docteur ?(mode = `Fast) ?(disk = disk) ?(analyze = analyze) ?branch remote =
       (`Genode, docteur_solo5 mode disk branch analyze remote);
     ]
     ~default:(docteur_unix mode disk branch analyze remote)
+
+let chamelon ~program_block_size ~block_size =
+  let keys = [ Key.v program_block_size; Key.v block_size ] in
+  let packages = [ package "chamelon" ~sublibs:[ "kv" ] ] in
+  let connect _ modname = function
+    | [ block; _ ] ->
+      Fmt.str {ocaml|%s.connect ~program_block_size:%a ~block_size:%a %s|ocaml}
+        modname
+        Key.serialize_call (Key.v program_block_size)
+        Key.serialize_call (Key.v block_size)
+        block
+    | _ -> assert false in
+  impl ~packages ~keys ~connect "Kv.Make" (block @-> pclock @-> Mirage_impl_kv.rw)
