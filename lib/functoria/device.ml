@@ -117,7 +117,11 @@ let keys t = t.keys
 let extra_deps t = t.extra_deps
 
 let start impl_name args =
-  Fmt.str "@[%s.start@ %a@]" impl_name Fmt.(list ~sep:sp string) args
+  match args with
+  | [] ->
+    Fmt.str "@[%s.start@ ()@]" impl_name
+  | _ ->
+    Fmt.str "@[%s.start@ %a@]" impl_name Fmt.(list ~sep:sp string) args
 
 let uniq t = Fpath.Set.(elements (of_list t))
 let exec_hook i = function None -> Action.ok () | Some h -> h i
